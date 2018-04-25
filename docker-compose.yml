@@ -3,7 +3,7 @@ version: "3.0"
 services:
 
   php:
-    image: composer
+    image: php
     volumes:
       - ./app:/app
     entrypoint:

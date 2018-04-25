@@ -265,4 +265,32 @@ class Payment implements IPayment
         $this->state = $state;
         return $this;
     }
+
+    public function serialize() : array 
+    {
+        return [
+            'id' => $this->getId(),
+            'createdTs' => $this->getCreated()->getTimestamp(),
+            'updatedTs' => $this->getUpdated()->getTimestamp(),
+            'isTest' => $this->isTest(),
+            'currencyCode' => $this->getCurrency()->getCode(),
+            'amount' => $this->getAmount(),
+            'taxAmount' => $this->getTaxAmount(),
+            'stateCode' => $this->getState()->getCode(),
+        ];
+    }
+
+    public static function deserialize(array $paymentInfo) : IPayment
+    {
+        return self::instance(
+            $paymentInfo['id'],
+            (new \DateTime())->setTimestamp($paymentInfo['createdTs']),
+            (new \DateTime())->setTimestamp($paymentInfo['updatedTs']),
+            (bool)$paymentInfo['isTest'],
+            new Currency($paymentInfo['currencyCode']),
+            $paymentInfo["amount"],
+            $paymentInfo["taxAmount"],
+            new State($paymentInfo['stateCode'])
+        );
+    }
 }

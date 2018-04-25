@@ -1,5 +1,5 @@
 #!/bin/bash
 
-cd /var/www/html
+sleep 6000
 composer install
 php web/handler.php

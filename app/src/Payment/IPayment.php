@@ -81,4 +81,7 @@ interface IPayment
      * @return State
      */
     public function getState(): State;
+
+    public function serialize() : array;
+    public static function deserialize(array $paymentInfo) : self;
 }
