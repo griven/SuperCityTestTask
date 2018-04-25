@@ -1,0 +1,9 @@
+version: "3.0"
+
+services:
+  php:
+    image: composer
+    volumes:
+      - ./app:/var/www/html
+    entrypoint:
+      sh /var/www/html/start.sh
