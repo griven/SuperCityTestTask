@@ -5,9 +5,9 @@ services:
   php:
     image: composer
     volumes:
-      - ./app:/var/www/html
+      - ./app:/app
     entrypoint:
-      sh /var/www/html/start.sh
+      sh /app/start.sh
 
   mongo:
     image: mongo:3.4
