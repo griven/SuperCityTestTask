@@ -35,9 +35,11 @@ class RedisStorage extends Storage
      */
     public function save(IPayment $payment): IStorage
     {
-        $paymentId = $payment->getId();
-        $paymentInfo = json_encode($payment->serialize());
-        $this->redis->set($paymentId, $paymentInfo);
+        [$paymentId, $paymentInfo] = $payment->serialize();
+        $isSaved = $this->redis->hMset($paymentId, $paymentInfo);
+        if ($isSaved) {
+            $payment->resetChangedAttributes();
+        }
 
         return $this;
     }
@@ -62,13 +64,13 @@ class RedisStorage extends Storage
      */
     public function get(string $paymentId): IPayment
     {
-        $payment = $this->redis->get($paymentId);
+        $paymentInfo = $this->redis->hGetAll($paymentId);
 
-        if (!$payment) {
+        if (!$paymentInfo) {
             throw new Exception\NotFound("Payment $paymentId not found");
         }
 
-        return Payment::deserialize(json_decode($payment, true));
+        return Payment::unserialize($paymentId, $paymentInfo);
     }
 
     /**

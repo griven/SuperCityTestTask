@@ -4,12 +4,25 @@
 namespace Playkot\PhpTestTask\Payment;
 
 
-/**
- * Class Payment
- * @package Playkot\PhpTestTask\Payment
- */
 class Payment implements IPayment
 {
+    const CREATED_TS = 'createdTs';
+    const UPDATED_TS = 'updatedTs';
+    const IS_TEST = 'isTest';
+    const CURRENCY_CODE = 'currencyCode';
+    const AMOUNT = "amount";
+    const TAX_AMOUNT = "taxAmount";
+    const STATE_CODE = 'stateCode';
+
+    const STRUCTURE = [
+        self::CREATED_TS,
+        self::UPDATED_TS,
+        self::IS_TEST,
+        self::CURRENCY_CODE,
+        self::AMOUNT,
+        self::TAX_AMOUNT,
+        self::STATE_CODE,
+    ];
 
     /**
      * Идентификатор
@@ -59,7 +72,17 @@ class Payment implements IPayment
      */
     private $state;
 
-    private function __construct() {}
+    /**
+     * Массив attribute => bool
+     * нужен чтобы сохранять только изменившиеся значения
+     *
+     * @var array
+     */
+    private $changedAttributes = [];
+
+    private function __construct() {
+        $this->resetChangedAttributes();
+    }
 
     /**
      * @param string $paymentId
@@ -183,6 +206,7 @@ class Payment implements IPayment
     private function setCreated(\DateTimeInterface $created) : self
     {
         $this->created = clone $created;
+        $this->changedAttributes[self::CREATED_TS] = true;
         return $this;
     }
 
@@ -195,6 +219,7 @@ class Payment implements IPayment
     private function setUpdated(\DateTimeInterface $updated) : self
     {
         $this->updated = clone $updated;
+        $this->changedAttributes[self::UPDATED_TS] = true;
         return $this;
     }
 
@@ -206,7 +231,11 @@ class Payment implements IPayment
      */
     private function setIsTest(bool $isTest) : self
     {
-        $this->isTest = $isTest;
+        if ($this->isTest !== $isTest) {
+            $this->isTest = $isTest;
+            $this->changedAttributes[self::IS_TEST] = true;
+        }
+
         return $this;
     }
 
@@ -218,7 +247,10 @@ class Payment implements IPayment
      */
     private function setCurrency(Currency $currency) : self
     {
-        $this->currency = $currency;
+        if ($this->currency !== $currency) {
+            $this->currency = $currency;
+            $this->changedAttributes[self::CURRENCY_CODE] = true;
+        }
         return $this;
     }
 
@@ -234,7 +266,11 @@ class Payment implements IPayment
             throw new \InvalidArgumentException('Must be greated than 0');
         }
 
-        $this->amount = $amount;
+        if($this->amount !== $amount) {
+            $this->amount = $amount;
+            $this->changedAttributes[self::AMOUNT] = true;
+        }
+
         return $this;
     }
 
@@ -250,7 +286,11 @@ class Payment implements IPayment
             throw new \InvalidArgumentException('Must be greated than 0');
         }
 
-        $this->taxAmount = $taxAmount;
+        if($this->taxAmount !== $taxAmount) {
+            $this->taxAmount = $taxAmount;
+            $this->changedAttributes[self::TAX_AMOUNT] = true;
+        }
+
         return $this;
     }
 
@@ -262,35 +302,75 @@ class Payment implements IPayment
      */
     private function setState(State $state) : self
     {
-        $this->state = $state;
+        if ($this->state !== $state) {
+            $this->state = $state;
+            $this->changedAttributes[self::STATE_CODE] = true;
+        }
         return $this;
     }
 
-    public function serialize() : array 
+    /**
+     * @inheritdoc
+     */
+    public function resetChangedAttributes()
     {
-        return [
-            'id' => $this->getId(),
-            'createdTs' => $this->getCreated()->getTimestamp(),
-            'updatedTs' => $this->getUpdated()->getTimestamp(),
-            'isTest' => $this->isTest(),
-            'currencyCode' => $this->getCurrency()->getCode(),
-            'amount' => $this->getAmount(),
-            'taxAmount' => $this->getTaxAmount(),
-            'stateCode' => $this->getState()->getCode(),
-        ];
+        foreach (self::STRUCTURE as $attribute) {
+            $this->changedAttributes[$attribute] = false;
+        }
     }
 
-    public static function deserialize(array $paymentInfo) : IPayment
+    /**
+     * @inheritdoc
+     */
+    public function serialize() : array 
+    {
+        $newAttributes = [];
+
+        foreach ($this->changedAttributes as $attribute => $isChanged) {
+            if ($isChanged) {
+                switch ($attribute) {
+                    case self::CREATED_TS:
+                        $newAttributes[self::CREATED_TS] = $this->getCreated()->getTimestamp();
+                        break;
+                    case self::UPDATED_TS:
+                        $newAttributes[self::UPDATED_TS] = $this->getUpdated()->getTimestamp();
+                        break;
+                    case self::IS_TEST:
+                        $newAttributes[self::IS_TEST] = $this->isTest();
+                        break;
+                    case self::CURRENCY_CODE:
+                        $newAttributes[self::CURRENCY_CODE] = $this->getCurrency()->getCode();
+                        break;
+                    case self::AMOUNT:
+                        $newAttributes[self::AMOUNT] = $this->getAmount();
+                        break;
+                    case self::TAX_AMOUNT:
+                        $newAttributes[self::TAX_AMOUNT] = $this->getTaxAmount();
+                        break;
+                    case self::STATE_CODE:
+                        $newAttributes[self::STATE_CODE] = $this->getState()->getCode();
+                        break;
+                }
+            }
+        }
+
+        return [$this->getId(), $newAttributes];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public static function unserialize(string $paymentId, array $paymentInfo) : IPayment
     {
         return self::instance(
-            $paymentInfo['id'],
-            (new \DateTime())->setTimestamp($paymentInfo['createdTs']),
-            (new \DateTime())->setTimestamp($paymentInfo['updatedTs']),
-            (bool)$paymentInfo['isTest'],
-            new Currency($paymentInfo['currencyCode']),
-            $paymentInfo["amount"],
-            $paymentInfo["taxAmount"],
-            new State($paymentInfo['stateCode'])
+            $paymentId,
+            (new \DateTime())->setTimestamp($paymentInfo[self::CREATED_TS]),
+            (new \DateTime())->setTimestamp($paymentInfo[self::UPDATED_TS]),
+            (bool)$paymentInfo[self::IS_TEST],
+            new Currency($paymentInfo[self::CURRENCY_CODE]),
+            $paymentInfo[self::AMOUNT],
+            $paymentInfo[self::TAX_AMOUNT],
+            new State($paymentInfo[self::STATE_CODE])
         );
     }
 }

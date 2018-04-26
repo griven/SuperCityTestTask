@@ -82,6 +82,26 @@ interface IPayment
      */
     public function getState(): State;
 
+
+    /**
+     * Скидывает флаги измененных атрибутов
+     * например при создании или после сохранения
+     */
+    public function resetChangedAttributes();
+
+    /**
+     * Подготовка к сохранению
+     *
+     * @return array - [id, info]
+     */
     public function serialize() : array;
-    public static function deserialize(array $paymentInfo) : self;
+
+    /**
+     * Генерация объекта из данных хранилища
+     *
+     * @param string $paymentId
+     * @param array $paymentInfo
+     * @return IPayment
+     */
+    public static function unserialize(string $paymentId, array $paymentInfo) : self;
 }
