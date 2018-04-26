@@ -362,7 +362,7 @@ class Payment implements IPayment
      */
     public static function unserialize(string $paymentId, array $paymentInfo) : IPayment
     {
-        return self::instance(
+        $payment = self::instance(
             $paymentId,
             (new \DateTime())->setTimestamp($paymentInfo[self::CREATED_TS]),
             (new \DateTime())->setTimestamp($paymentInfo[self::UPDATED_TS]),
@@ -372,5 +372,8 @@ class Payment implements IPayment
             $paymentInfo[self::TAX_AMOUNT],
             new State($paymentInfo[self::STATE_CODE])
         );
+
+        $payment->resetChangedAttributes();
+        return $payment;
     }
 }
