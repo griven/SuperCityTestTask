@@ -20,7 +20,7 @@ class StorageTest extends TestCase
                 [
                     'engine' => 'redis',
                     'host' => 'redis', // localhost если не через docker
-                    'port' => 63792,
+                    'port' => 6379,
                 ]
             ],
 
