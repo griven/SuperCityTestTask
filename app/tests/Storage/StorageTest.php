@@ -16,8 +16,23 @@ class StorageTest extends TestCase
     public function storageProvider()
     {
         return [
-            [[]],
-            [['mongo']]
+            [
+                [
+                    'engine' => 'redis',
+                    'host' => 'redis', // localhost если не через docker
+                    'port' => 63792,
+                ]
+            ],
+
+            [
+                [
+                    'engine' => 'mongo',
+                    'host' => 'mongo',
+                    'port' => 27017,
+                    'db' => 'test',
+                    'collection' => 'payments'
+                ]
+            ]
         ];
     }
     /**

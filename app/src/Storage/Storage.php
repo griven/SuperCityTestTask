@@ -3,39 +3,34 @@
 namespace Playkot\PhpTestTask\Storage;
 
 use Playkot\PhpTestTask\Payment\IPayment;
-use Playkot\PhpTestTask\Storage\Exception;
 
 class Storage implements IStorage
 {
     /**
-     * @var IStorage
+     * @var IStorage - экземляр конкретного хранилища
      */
     private $concreteStorage;
 
+    private function __construct() {}
+
     /**
-     * Фабричный метод для создания экземпляра хранилища
-     *
-     * @param array $config
-     * @return IStorage
+     * @inheritdoc
      */
     public static function instance(array $config = null): IStorage
     {
         $storage = new self();
 
-        if (empty($config)) {
-            $storage->concreteStorage = RedisStorage::instance();
+        if ($config['engine'] == 'redis') {
+            $storage->concreteStorage = new RedisStorage($config);
         } else {
-            $storage->concreteStorage = MongoStorage::instance();
+            $storage->concreteStorage = new MongoStorage($config);
         }
 
         return $storage;
     }
 
     /**
-     * Сохранение существующего платежа или создание нового
-     *
-     * @param IPayment $payment
-     * @return IStorage
+     * @inheritdoc
      */
     public function save(IPayment $payment): IStorage
     {
@@ -44,10 +39,7 @@ class Storage implements IStorage
     }
 
     /**
-     * Проверка на существование платежа
-     *
-     * @param string $paymentId
-     * @return bool
+     * @inheritdoc
      */
     public function has(string $paymentId): bool
     {
@@ -55,11 +47,7 @@ class Storage implements IStorage
     }
 
     /**
-     * Получение платежа
-     *
-     * @param string $paymentId
-     * @return IPayment
-     * @throws Exception\NotFound
+     * @inheritdoc
      */
     public function get(string $paymentId): IPayment
     {
@@ -67,10 +55,7 @@ class Storage implements IStorage
     }
 
     /**
-     * Удаление платежа
-     *
-     * @param IPayment $payment
-     * @return IStorage
+     * @inheritdoc
      */
     public function remove(IPayment $payment): IStorage
     {

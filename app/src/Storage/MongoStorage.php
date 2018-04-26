@@ -11,35 +11,24 @@ use MongoDB\Driver\Manager as MongoManager;
 
 class MongoStorage extends Storage
 {
-    const COLLECTION = "payments";
-    const DB = "test";
-
+    /**
+     * @var MongoManager - точка входа в mongo
+     */
     private $mongo;
+
+    /**
+     * @var string - Коллекция где храним платежи
+     */
     private $collection;
 
-    /**
-     * Фабричный метод для создания экземпляра хранилища
-     *
-     * @param array $config
-     * @return IStorage
-     */
-    public static function instance(array $config = null): IStorage
+    protected function __construct(array $config = null)
     {
-        return new self();
-    }
-
-    private function __construct()
-    {
-        $this->mongo = new MongoManager('mongodb://mongo:27017');
-        $this->collection = self::DB . '.' . self::COLLECTION;
+        $this->mongo = new MongoManager('mongodb://' . $config['host'] . ':' . $config['port']);
+        $this->collection = $config['db'] . '.' . $config['collection'];
     }
 
     /**
-     * Сохранение существующего платежа или создание нового
-     *
-     * @param IPayment $payment
-     * @return IStorage
-     * @throws \MongoDB\Driver\Exception\Exception
+     * @inheritdoc
      */
     public function save(IPayment $payment): IStorage
     {
@@ -57,10 +46,7 @@ class MongoStorage extends Storage
     }
 
     /**
-     * Проверка на существование платежа
-     *
-     * @param string $paymentId
-     * @return bool
+     * @inheritdoc
      * @throws \MongoDB\Driver\Exception\Exception
      */
     public function has(string $paymentId): bool
@@ -71,11 +57,7 @@ class MongoStorage extends Storage
     }
 
     /**
-     * Получение платежа
-     *
-     * @param string $paymentId
-     * @return IPayment
-     * @throws Exception\NotFound
+     * @inheritdoc
      * @throws \MongoDB\Driver\Exception\Exception
      */
     public function get(string $paymentId): IPayment
@@ -91,10 +73,7 @@ class MongoStorage extends Storage
     }
 
     /**
-     * Удаление платежа
-     *
-     * @param IPayment $payment
-     * @return IStorage
+     * @inheritdoc
      */
     public function remove(IPayment $payment): IStorage
     {

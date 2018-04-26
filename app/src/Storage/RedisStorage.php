@@ -8,30 +8,19 @@ use Playkot\PhpTestTask\Storage\Exception;
 
 class RedisStorage extends Storage
 {
+    /**
+     * @var \Redis - клиент redis
+     */
     private $redis;
 
-    /**
-     * Фабричный метод для создания экземпляра хранилища
-     *
-     * @param array $config
-     * @return IStorage
-     */
-    public static function instance(array $config = null): IStorage
-    {
-        return new self();
-    }
-
-    private function __construct()
+    protected function __construct(array $config = null)
     {
         $this->redis = new \Redis();
-        $this->redis->connect('redis');
+        $this->redis->connect($config['host'], $config['port']);
     }
 
     /**
-     * Сохранение существующего платежа или создание нового
-     *
-     * @param IPayment $payment
-     * @return IStorage
+     * @inheritdoc
      */
     public function save(IPayment $payment): IStorage
     {
@@ -47,10 +36,7 @@ class RedisStorage extends Storage
     }
 
     /**
-     * Проверка на существование платежа
-     *
-     * @param string $paymentId
-     * @return bool
+     * @inheritdoc
      */
     public function has(string $paymentId): bool
     {
@@ -58,11 +44,7 @@ class RedisStorage extends Storage
     }
 
     /**
-     * Получение платежа
-     *
-     * @param string $paymentId
-     * @return IPayment
-     * @throws Exception\NotFound
+     * @inheritdoc
      */
     public function get(string $paymentId): IPayment
     {
@@ -76,10 +58,7 @@ class RedisStorage extends Storage
     }
 
     /**
-     * Удаление платежа
-     *
-     * @param IPayment $payment
-     * @return IStorage
+     * @inheritdoc
      */
     public function remove(IPayment $payment): IStorage
     {
