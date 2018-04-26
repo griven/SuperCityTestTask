@@ -1,11 +1,12 @@
-FROM composer as php_redis
+FROM composer
 
-# установка redis extension
-RUN curl -L -o /tmp/redis.tar.gz https://github.com/phpredis/phpredis/archive/4.0.2.tar.gz \
-    && tar xfz /tmp/redis.tar.gz \
-    && rm -r /tmp/redis.tar.gz \
-    && mkdir -p /usr/src/php/ext/ \
-    && mv phpredis-4.0.2 /usr/src/php/ext/redis \
-    && cd /usr/src/php/ext/redis \
-    && docker-php-ext-install redis
-
+RUN apk --update add autoconf g++ make \
+    # igbinary нужен для redis
+    && pecl install -o -f igbinary \
+    && echo "extension=igbinary.so" > /usr/local/etc/php/conf.d/igbinary.ini \
+    # установка расширения redis
+    && pecl install -o -f redis \
+    && echo "extension=redis.so" > /usr/local/etc/php/conf.d/redis.ini \
+    # установка расширения mongo
+    && pecl install -o -f mongodb \
+    && echo "extension=mongodb.so" > /usr/local/etc/php/conf.d/ext-mongo.ini
