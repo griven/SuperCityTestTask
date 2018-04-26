@@ -13,12 +13,24 @@ use PHPUnit\Framework\TestCase;
 
 class StorageTest extends TestCase
 {
-    public function testCreateStorage()
+    public function storageProvider()
+    {
+        return [
+            [[]],
+            [['mongo']]
+        ];
+    }
+    /**
+     * @dataProvider storageProvider
+     * @param $config
+     * @throws Exception\NotFound
+     */
+    public function testCreateStorage(array $config)
     {
         self::assertTrue(class_exists('Playkot\PhpTestTask\Storage\Storage'), 'Storage class not found');
         self::assertTrue(in_array(IStorage::class, class_implements(Storage::class)), 'Storage not implements IStorage interface');
 
-        $storage = Storage::instance();
+        $storage = Storage::instance($config);
         self::assertInstanceOf(Storage::class, $storage);
 
         for ($i = 1; $i < 10; $i++) {

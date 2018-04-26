@@ -7,7 +7,6 @@ use Playkot\PhpTestTask\Storage\Exception;
 
 class Storage implements IStorage
 {
-    protected $db;
     /**
      * @var IStorage
      */
@@ -26,7 +25,7 @@ class Storage implements IStorage
         if (empty($config)) {
             $storage->concreteStorage = RedisStorage::instance();
         } else {
-            throw new Exception\NotFound();
+            $storage->concreteStorage = MongoStorage::instance();
         }
 
         return $storage;

@@ -2,13 +2,20 @@
 
 namespace Playkot\PhpTestTask\Storage;
 
+use MongoDB\Driver\BulkWrite;
+use MongoDB\Driver\Query;
 use Playkot\PhpTestTask\Payment\IPayment;
 use Playkot\PhpTestTask\Payment\Payment;
 use Playkot\PhpTestTask\Storage\Exception;
+use MongoDB\Driver\Manager as MongoManager;
 
-class RedisStorage extends Storage
+class MongoStorage extends Storage
 {
-    private $redis;
+    const COLLECTION = "payments";
+    const DB = "test";
+
+    private $mongo;
+    private $collection;
 
     /**
      * Фабричный метод для создания экземпляра хранилища
@@ -23,8 +30,8 @@ class RedisStorage extends Storage
 
     private function __construct()
     {
-        $this->redis = new \Redis();
-        $this->redis->connect('redis');
+        $this->mongo = new MongoManager('mongodb://mongo:27017');
+        $this->collection = self::DB . '.' . self::COLLECTION;
     }
 
     /**
@@ -32,12 +39,15 @@ class RedisStorage extends Storage
      *
      * @param IPayment $payment
      * @return IStorage
+     * @throws \MongoDB\Driver\Exception\Exception
      */
     public function save(IPayment $payment): IStorage
     {
         [$paymentId, $paymentInfo] = $payment->serialize();
         if ($paymentInfo) {
-            $isSaved = $this->redis->hMset($paymentId, $paymentInfo);
+            $bulk = new BulkWrite();
+            $bulk->update(['_id' => $paymentId], array_merge(['_id' => $paymentId], $paymentInfo), ['upsert' => true]);
+            $isSaved = $this->mongo->executeBulkWrite($this->collection, $bulk);
             if ($isSaved) {
                 $payment->resetChangedAttributes();
             }
@@ -51,10 +61,13 @@ class RedisStorage extends Storage
      *
      * @param string $paymentId
      * @return bool
+     * @throws \MongoDB\Driver\Exception\Exception
      */
     public function has(string $paymentId): bool
     {
-        return $this->redis->exists($paymentId);
+        $command = new Query(['_id' => $paymentId]);
+        $cursor = $this->mongo->executeQuery($this->collection, $command);
+        return (bool)$cursor->toArray();
     }
 
     /**
@@ -63,14 +76,16 @@ class RedisStorage extends Storage
      * @param string $paymentId
      * @return IPayment
      * @throws Exception\NotFound
+     * @throws \MongoDB\Driver\Exception\Exception
      */
     public function get(string $paymentId): IPayment
     {
         if (!$this->has($paymentId)) {
             throw new Exception\NotFound("Payment $paymentId not found");
         }
-
-        $paymentInfo = $this->redis->hGetAll($paymentId);
+        $command = new Query(['_id' => $paymentId]);
+        $cursor = $this->mongo->executeQuery($this->collection, $command);
+        $paymentInfo = (array)$cursor->toArray()[0];
 
         return Payment::unserialize($paymentId, $paymentInfo);
     }
@@ -83,7 +98,9 @@ class RedisStorage extends Storage
      */
     public function remove(IPayment $payment): IStorage
     {
-        $this->redis->del($payment->getId());
+        $bulk = new BulkWrite();
+        $bulk->delete(['_id' => $payment->getId()]);
+        $this->mongo->executeBulkWrite($this->collection, $bulk);
         return $this;
     }
 }
