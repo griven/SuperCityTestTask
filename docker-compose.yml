@@ -3,11 +3,12 @@ version: "3.0"
 services:
 
   php:
-    image: php
+    build:
+      ./image/redis
     volumes:
       - ./app:/app
     entrypoint:
-      sh /app/start.sh
+      sh start.sh
 
   mongo:
     image: mongo:3.4
